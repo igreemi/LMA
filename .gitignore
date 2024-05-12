@@ -1,0 +1,8 @@
+.vs/
+.vs/CppBase/
+.vs/ProjectEvaluation/
+*.sln
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
