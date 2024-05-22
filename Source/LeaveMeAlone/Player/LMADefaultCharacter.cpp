@@ -8,6 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/UnrealMathUtility.h"
+#include "../Component/LMAHealthComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "GameFramework/SpringArmComponent.h"
 
@@ -33,6 +35,8 @@ ALMADefaultCharacter::ALMADefaultCharacter()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
+
+	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>("HealthComponent");
 }
 
 // Called when the game starts or when spawned
@@ -44,6 +48,23 @@ void ALMADefaultCharacter::BeginPlay()
 	{
 		CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
 	}
+
+	HealthComponent->OnDeath.AddUObject(this, &ALMADefaultCharacter::OnDeath);
+
+	OnHealthChanged(HealthComponent->GetHealth());
+	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
+}
+
+bool ALMADefaultCharacter::GetStateSprint()
+{
+	if (GetVelocity().Size() > DefaultWalkSpeed && bIsSprint == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 // Called every frame
@@ -51,17 +72,9 @@ void ALMADefaultCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (PC)
+	if (!(HealthComponent->IsDead()))
 	{
-		FHitResult ResultHit;
-		PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
-		float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
-		SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
-		if (CurrentCursor)
-		{
-			CurrentCursor->SetWorldLocation(ResultHit.Location);
-		}
+		RotationPlayerOnCursor();
 	}
 }
 
@@ -72,6 +85,9 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ALMADefaultCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ALMADefaultCharacter::MoveRight);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ALMADefaultCharacter::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ALMADefaultCharacter::StopSprint);
 
 	PlayerInputComponent->BindAction("CameraZoomUp", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomUp);
 	PlayerInputComponent->BindAction("CameraZoomDown", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomDown);
@@ -85,6 +101,81 @@ void ALMADefaultCharacter::MoveForward(float Value)
 void ALMADefaultCharacter::MoveRight(float Value)
 {
 	AddMovementInput(GetActorRightVector(), Value);
+}
+
+void ALMADefaultCharacter::DecreaseStamina()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("(Stamina > MinStamina) = %f"), Stamina));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("GetVelocity().Size() = %f"), GetVelocity().Size()));
+
+	if (Stamina > MinStamina && GetVelocity().Size() > DefaultWalkSpeed)
+	{
+		Stamina = FMath::Max(MinStamina, Stamina - DecreaseInStamina);
+	}
+	else if (FMath::IsNearlyEqual(Stamina, MinStamina))
+	{
+		Stamina = MinStamina;
+
+		bIsSprint = false;
+
+		if (DecreaseStaminaTimer.IsValid())
+		{
+			GetWorldTimerManager().ClearTimer(DecreaseStaminaTimer);
+		}
+		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+	}
+}
+
+void ALMADefaultCharacter::RecoveryStamina()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("(Stamina < MaxStamina) = %f"), Stamina));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("GetVelocity().Size() = %f"), GetVelocity().Size()));
+
+	if (Stamina < MaxStamina && GetVelocity().Size() <= DefaultWalkSpeed)
+	{
+		Stamina = FMath::Min(MaxStamina, Stamina + StaminaRecovery);
+	}
+	else if (FMath::IsNearlyEqual(Stamina, MaxStamina))
+	{
+		Stamina = MaxStamina;
+
+		bIsSprint = true;
+
+		if (RecoveryStaminaTimer.IsValid())
+		{
+			GetWorldTimerManager().ClearTimer(RecoveryStaminaTimer);
+		}
+	}
+}
+
+void ALMADefaultCharacter::Sprint()
+{
+	if (RecoveryStaminaTimer.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(RecoveryStaminaTimer);
+	}
+
+	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+
+	if (!DecreaseStaminaTimer.IsValid())
+	{
+		GetWorldTimerManager().SetTimer(DecreaseStaminaTimer, this, &ThisClass::DecreaseStamina, StaminaDecreaseRate, true);
+	}
+}
+
+void ALMADefaultCharacter::StopSprint()
+{
+	if (DecreaseStaminaTimer.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(DecreaseStaminaTimer);
+	}
+
+	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+
+	if (!RecoveryStaminaTimer.IsValid())
+	{
+		GetWorldTimerManager().SetTimer(RecoveryStaminaTimer, this, &ThisClass::RecoveryStamina, StaminaRecoveryRate, true);
+	}
 }
 
 void ALMADefaultCharacter::CameraZoomUp()
@@ -107,4 +198,37 @@ void ALMADefaultCharacter::CameraZoomDown()
 		SpringArmComponent->TargetArmLength =
 			FMath::FInterpTo(SpringArmComponent->TargetArmLength, TargetZoomTMP, GetWorld()->TimeSeconds, 1.0f);
 	}
+}
+
+void ALMADefaultCharacter::OnDeath()
+{
+	CurrentCursor->DestroyRenderState_Concurrent();
+	PlayAnimMontage(DeathMontage);
+	GetCharacterMovement()->DisableMovement();
+	SetLifeSpan(5.0f);
+	if (Controller)
+	{
+		Controller->ChangeState(NAME_Spectating);
+	}
+}
+
+void ALMADefaultCharacter::RotationPlayerOnCursor()
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (PC)
+	{
+		FHitResult ResultHit;
+		PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
+		float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
+		SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
+		if (CurrentCursor)
+		{
+			CurrentCursor->SetWorldLocation(ResultHit.Location);
+		}
+	}
+}
+
+void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Health = %f"), NewHealth));
 }
