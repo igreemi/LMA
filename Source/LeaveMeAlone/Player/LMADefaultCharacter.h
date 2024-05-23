@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class ULMAHealthComponent;
 class UAnimMontage;
+class ULMAWeaponComponent;
 
 UCLASS()
 class LEAVEMEALONE_API ALMADefaultCharacter : public ACharacter
@@ -71,6 +72,10 @@ protected:
 
 	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	ULMAWeaponComponent* WeaponComponent;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	UMaterialInterface* CursorMaterial = nullptr;

@@ -9,9 +9,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/UnrealMathUtility.h"
 #include "../Component/LMAHealthComponent.h"
+#include "../Component/LMAWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-#include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
 ALMADefaultCharacter::ALMADefaultCharacter()
@@ -37,6 +36,8 @@ ALMADefaultCharacter::ALMADefaultCharacter()
 	bUseControllerRotationRoll = false;
 
 	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>("HealthComponent");
+
+	WeaponComponent = CreateDefaultSubobject<ULMAWeaponComponent>("Weapon");
 }
 
 // Called when the game starts or when spawned
@@ -91,6 +92,11 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("CameraZoomUp", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomUp);
 	PlayerInputComponent->BindAction("CameraZoomDown", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomDown);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &ULMAWeaponComponent::EndFire);
+
+	PlayerInputComponent->BindAction("ReloadWeapon", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Reload);
 }
 
 void ALMADefaultCharacter::MoveForward(float Value)
