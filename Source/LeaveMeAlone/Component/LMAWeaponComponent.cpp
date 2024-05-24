@@ -12,7 +12,6 @@ ULMAWeaponComponent::ULMAWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 	// ...
 }
 
@@ -85,20 +84,15 @@ void ULMAWeaponComponent::Fire()
 {
 	if (Weapon && !AnimReloading)
 	{
-		Weapon->Fire();
-	}
-}
+		if (FireTimer.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+		}
 
-void ULMAWeaponComponent::StartFire() 
-{
-	if (FireTimer.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(FireTimer);
-	}
-
-	if (!FireTimer.IsValid())
-	{
-		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &ThisClass::Fire, FireRate, true, 0);
+		if (!FireTimer.IsValid())
+		{
+			GetOwner()->GetWorld()->GetTimerManager().SetTimer(FireTimer, Weapon, &ALMAWeaponBase::Fire, FireRate, true, 0);
+		}
 	}
 }
 
