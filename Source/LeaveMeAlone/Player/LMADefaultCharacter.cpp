@@ -101,12 +101,46 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 void ALMADefaultCharacter::MoveForward(float Value)
 {
-	AddMovementInput(GetActorForwardVector(), Value);
+	float Direction = GetActorRotation().Yaw;
+
+	if (Direction == FMath::Clamp(Direction, -45.f, 45.f))
+	{
+		AddMovementInput(GetActorForwardVector(), Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, 45.f, 115.f))
+	{
+		AddMovementInput(GetActorRightVector(), -Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, 115.f, 180.f) || Direction == FMath::Clamp(Direction, -180.f, -135.f))
+	{
+		AddMovementInput(GetActorForwardVector(), -Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, -135.f, -45.f))
+	{
+		AddMovementInput(GetActorRightVector(), Value);
+	}
 }
 
 void ALMADefaultCharacter::MoveRight(float Value)
 {
-	AddMovementInput(GetActorRightVector(), Value);
+	float Direction = GetActorRotation().Yaw;
+
+	if (Direction == FMath::Clamp(Direction, -45.f, 45.f))
+	{
+		AddMovementInput(GetActorRightVector(), Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, 115.f, 180.f) || Direction == FMath::Clamp(Direction, -180.f, -135.f))
+	{
+		AddMovementInput(GetActorRightVector(), -Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, 45.f, 115.f))
+	{
+		AddMovementInput(GetActorForwardVector(), Value);
+	}
+	else if (Direction == FMath::Clamp(Direction, -135.f, -45.f))
+	{
+		AddMovementInput(GetActorForwardVector(), -Value);
+	}
 }
 
 void ALMADefaultCharacter::DecreaseStamina()

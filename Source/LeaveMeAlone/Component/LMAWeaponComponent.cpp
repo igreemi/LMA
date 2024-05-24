@@ -24,7 +24,6 @@ void ULMAWeaponComponent::BeginPlay()
 	SpawnWeapon();
 
 	InitAnimNotify();
-	// ...
 }
 
 void ULMAWeaponComponent::SpawnWeapon()
