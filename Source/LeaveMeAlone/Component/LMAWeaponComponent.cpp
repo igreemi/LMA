@@ -5,7 +5,6 @@
 #include "GameFramework/Character.h"
 #include "../Weapon/LMAWeaponBase.h"
 
-
 // Sets default values for this component's properties
 ULMAWeaponComponent::ULMAWeaponComponent()
 {
@@ -23,6 +22,8 @@ void ULMAWeaponComponent::BeginPlay()
 	SpawnWeapon();
 
 	InitAnimNotify();
+
+	Weapon->OutOfBullets.AddUObject(this, &ULMAWeaponComponent::OutOfBullets);
 }
 
 void ULMAWeaponComponent::SpawnWeapon()
@@ -41,12 +42,19 @@ void ULMAWeaponComponent::SpawnWeapon()
 
 void ULMAWeaponComponent::Reload()
 {
-	if (!CanReload())
-		return;
-	Weapon->ChangeClip();
-	AnimReloading = true;
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-	Character->PlayAnimMontage(ReloadMontage);
+
+		if (FireTimer.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+		}
+
+		OutOfBullets();
+
+		if (!FireTimer.IsValid() && bFireButtonOn)
+		{
+			GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &ThisClass::Fire, FireRate, true, 0);
+		}
+	
 }
 
 void ULMAWeaponComponent::InitAnimNotify()
@@ -77,27 +85,57 @@ void ULMAWeaponComponent::OnNotifyReloadFinished(USkeletalMeshComponent* Skeleta
 
 bool ULMAWeaponComponent::CanReload() const
 {
+	if (!Weapon->FullOrEmptyClip())
+	{
+		return 1;
+	}
 	return !AnimReloading;
+}
+
+void ULMAWeaponComponent::OutOfBullets()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("OutOfBullets")));
+
+	if (!CanReload())
+	{
+		return;
+	}
+
+	Weapon->ChangeClip();
+	AnimReloading = true;
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	Character->PlayAnimMontage(ReloadMontage);
 }
 
 void ULMAWeaponComponent::Fire()
 {
 	if (Weapon && !AnimReloading)
 	{
-		if (FireTimer.IsValid())
-		{
-			GetWorld()->GetTimerManager().ClearTimer(FireTimer);
-		}
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("AnimReloading = %i"), AnimReloading));
 
-		if (!FireTimer.IsValid())
-		{
-			GetOwner()->GetWorld()->GetTimerManager().SetTimer(FireTimer, Weapon, &ALMAWeaponBase::Fire, FireRate, true, 0);
-		}
+		Weapon->Fire();
 	}
 }
 
-void ULMAWeaponComponent::EndFire() 
+void ULMAWeaponComponent::StartFire()
 {
+	bFireButtonOn = true;
+
+	if (FireTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+	}
+
+	if (!FireTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &ThisClass::Fire, FireRate, true, 0);
+	}
+}
+
+void ULMAWeaponComponent::StopFire()
+{
+	bFireButtonOn = false;
+
 	if (FireTimer.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireTimer);

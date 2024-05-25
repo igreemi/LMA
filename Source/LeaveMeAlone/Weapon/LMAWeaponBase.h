@@ -8,6 +8,8 @@
 
 class USkeletalMeshComponent;
 
+DECLARE_MULTICAST_DELEGATE(FOutOfBulletsSignature);
+
 USTRUCT(BlueprintType)
 struct FAmmoWeapon
 {
@@ -59,6 +61,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	FOutOfBulletsSignature OutOfBullets;
+
 	void Fire();
 	void ChangeClip();
+	bool FullOrEmptyClip();
 };

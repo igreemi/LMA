@@ -40,14 +40,17 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void Fire();
-	void EndFire();
+	void StartFire();
+	void StopFire();
 	void Reload();
 	void SpawnWeapon();
 	void InitAnimNotify();
 	void OnNotifyReloadFinished(USkeletalMeshComponent* SkeletalMesh);
 	bool CanReload() const;
+	void OutOfBullets();
 
 private:
 	FTimerHandle FireTimer;
+	bool bFireButtonOn = false;
 
 };

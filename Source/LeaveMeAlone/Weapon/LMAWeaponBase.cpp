@@ -46,11 +46,14 @@ void ALMAWeaponBase::Shoot()
 void ALMAWeaponBase::DecrementBullets() 
 {
 	CurrentAmmoWeapon.Bullets--;
-	UE_LOG(LogWeapon, Display, TEXT("Bullets = %s"), *FString::FromInt(CurrentAmmoWeapon.Bullets));
+
 	if (IsCurrentClipEmpty())
 	{
 		ChangeClip();
+		OutOfBullets.Broadcast();
 	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Bullets = %d"), CurrentAmmoWeapon.Bullets));
 }
 
 bool ALMAWeaponBase::IsCurrentClipEmpty() const
@@ -61,6 +64,20 @@ bool ALMAWeaponBase::IsCurrentClipEmpty() const
 void ALMAWeaponBase::ChangeClip()
 {
 	CurrentAmmoWeapon.Bullets = AmmoWeapon.Bullets;
+}
+
+bool ALMAWeaponBase::FullOrEmptyClip() 
+{
+	if (CurrentAmmoWeapon.Bullets == AmmoWeapon.Bullets)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("FullOrEmptyClip = true")));
+		return true;
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("FullOrEmptyClip = false")));
+		return false;
+	}
 }
 
 // Called every frame

@@ -93,8 +93,8 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAction("CameraZoomUp", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomUp);
 	PlayerInputComponent->BindAction("CameraZoomDown", IE_Pressed, this, &ALMADefaultCharacter::CameraZoomDown);
 
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Fire);
-	PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &ULMAWeaponComponent::EndFire);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &ULMAWeaponComponent::StopFire);
 
 	PlayerInputComponent->BindAction("ReloadWeapon", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Reload);
 }
