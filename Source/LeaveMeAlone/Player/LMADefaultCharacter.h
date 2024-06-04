@@ -102,6 +102,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetStateSprint();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnHealthChanged(float NewHealth);
+
 private:
 	float YRotation = -75.0f;
 	float ArmLength = 1400.0f;
@@ -119,7 +122,7 @@ private:
 	void CameraZoomDown();
 	void OnDeath();
 	void RotationPlayerOnCursor();
-	void OnHealthChanged(float NewHealth);
+	
 	FTimerHandle DecreaseStaminaTimer;
 	FTimerHandle RecoveryStaminaTimer;
 };

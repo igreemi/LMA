@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include <LeaveMeAlone/Weapon/LMAWeaponBase.h>
 #include "LMAWeaponComponent.generated.h"
+
 
 class ALMAWeaponBase;
 
@@ -48,6 +50,9 @@ public:
 	void OnNotifyReloadFinished(USkeletalMeshComponent* SkeletalMesh);
 	bool CanReload() const;
 	void OutOfBullets();
+
+	UFUNCTION(BlueprintCallable)
+	bool GetCurrentWeapnAmmo(FAmmoWeapon& AmmoWeapon) const; 
 
 private:
 	FTimerHandle FireTimer;

@@ -107,6 +107,16 @@ void ULMAWeaponComponent::OutOfBullets()
 	Character->PlayAnimMontage(ReloadMontage);
 }
 
+bool ULMAWeaponComponent::GetCurrentWeapnAmmo(FAmmoWeapon& AmmoWeapon) const
+{
+	if (Weapon)
+	{
+		AmmoWeapon = Weapon->GetCurrentAmmoWeapon();
+		return true;
+	}
+	return false;
+}
+
 void ULMAWeaponComponent::Fire()
 {
 	if (Weapon && !AnimReloading)

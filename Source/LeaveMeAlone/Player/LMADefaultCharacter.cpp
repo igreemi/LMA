@@ -1,6 +1,7 @@
 // ---------------LMA--------------
 
 #include "LMADefaultCharacter.h"
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/InputComponent.h"
@@ -11,6 +12,8 @@
 #include "../Component/LMAHealthComponent.h"
 #include "../Component/LMAWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "LMAPlayerController.h"
+#include <LeaveMeAlone/Widgets/BaseHUD.h>
 
 // Sets default values
 ALMADefaultCharacter::ALMADefaultCharacter()
@@ -158,7 +161,7 @@ void ALMADefaultCharacter::DecreaseStamina()
 
 		bIsSprint = false;
 
-		if (DecreaseStaminaTimer.IsValid())
+		if (GetWorldTimerManager().IsTimerActive(DecreaseStaminaTimer))
 		{
 			GetWorldTimerManager().ClearTimer(DecreaseStaminaTimer);
 		}
@@ -179,9 +182,7 @@ void ALMADefaultCharacter::RecoveryStamina()
 	{
 		Stamina = MaxStamina;
 
-		bIsSprint = true;
-
-		if (RecoveryStaminaTimer.IsValid())
+		if (GetWorldTimerManager().IsTimerActive(RecoveryStaminaTimer))
 		{
 			GetWorldTimerManager().ClearTimer(RecoveryStaminaTimer);
 		}
@@ -190,14 +191,16 @@ void ALMADefaultCharacter::RecoveryStamina()
 
 void ALMADefaultCharacter::Sprint()
 {
-	if (RecoveryStaminaTimer.IsValid())
+	if (GetWorldTimerManager().IsTimerActive(RecoveryStaminaTimer))
 	{
 		GetWorldTimerManager().ClearTimer(RecoveryStaminaTimer);
 	}
 
+	bIsSprint = true;
+
 	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 
-	if (!DecreaseStaminaTimer.IsValid())
+	if (!GetWorldTimerManager().IsTimerActive(DecreaseStaminaTimer))
 	{
 		GetWorldTimerManager().SetTimer(DecreaseStaminaTimer, this, &ThisClass::DecreaseStamina, StaminaDecreaseRate, true);
 	}
@@ -205,14 +208,16 @@ void ALMADefaultCharacter::Sprint()
 
 void ALMADefaultCharacter::StopSprint()
 {
-	if (DecreaseStaminaTimer.IsValid())
+	if (GetWorldTimerManager().IsTimerActive(DecreaseStaminaTimer))
 	{
 		GetWorldTimerManager().ClearTimer(DecreaseStaminaTimer);
 	}
 
+	bIsSprint = false;
+
 	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
 
-	if (!RecoveryStaminaTimer.IsValid())
+	if (!GetWorldTimerManager().IsTimerActive(RecoveryStaminaTimer))
 	{
 		GetWorldTimerManager().SetTimer(RecoveryStaminaTimer, this, &ThisClass::RecoveryStamina, StaminaRecoveryRate, true);
 	}
@@ -243,6 +248,20 @@ void ALMADefaultCharacter::CameraZoomDown()
 void ALMADefaultCharacter::OnDeath()
 {
 	CurrentCursor->DestroyRenderState_Concurrent();
+
+	auto PlayerController = Cast<ALMAPlayerController>(Controller);
+	if (PlayerController)
+	{
+		auto HUD = Cast<ABaseHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			for (auto Widget : HUD->WidgetsContainer)
+			{
+				Widget->RemoveFromParent();
+			}
+		}
+	}
+
 	PlayAnimMontage(DeathMontage);
 	GetCharacterMovement()->DisableMovement();
 	SetLifeSpan(5.0f);
@@ -268,7 +287,9 @@ void ALMADefaultCharacter::RotationPlayerOnCursor()
 	}
 }
 
+/*
 void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Health = %f"), NewHealth));
 }
+*/

@@ -66,4 +66,6 @@ public:
 	void Fire();
 	void ChangeClip();
 	bool FullOrEmptyClip();
+
+	FAmmoWeapon GetCurrentAmmoWeapon() const { return CurrentAmmoWeapon; }
 };
