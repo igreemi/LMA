@@ -7,15 +7,14 @@
 #include <LeaveMeAlone/Weapon/LMAWeaponBase.h>
 #include "LMAWeaponComponent.generated.h"
 
-
 class ALMAWeaponBase;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LEAVEMEALONE_API ULMAWeaponComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	ULMAWeaponComponent();
 
@@ -37,7 +36,7 @@ protected:
 
 	bool AnimReloading = false;
 
-public:	
+public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -52,10 +51,9 @@ public:
 	void OutOfBullets();
 
 	UFUNCTION(BlueprintCallable)
-	bool GetCurrentWeapnAmmo(FAmmoWeapon& AmmoWeapon) const; 
+	bool GetCurrentWeapnAmmo(FAmmoWeapon& AmmoWeapon) const;
 
 private:
 	FTimerHandle FireTimer;
 	bool bFireButtonOn = false;
-
 };
